@@ -9,7 +9,7 @@ export const Card = ({ title, children }: CardProps) => {
       <div className="bg-[#f2f2f6] px-4 py-3">
         <h2 className="text-[20px] font-semibold">{title}</h2>
       </div>
-      <div className="p-4 flex flex-col gap-3">{children}</div>
+      <div className="p-3 flex flex-col gap-3">{children}</div>
     </div>
   );
 };
