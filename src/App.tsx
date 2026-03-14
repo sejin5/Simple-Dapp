@@ -2,10 +2,14 @@ import { Card } from "./components/Card";
 import { Button } from "./components/Button";
 import { Input } from "./components/Input";
 import { useWalletStore } from "./stores/walletStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Toast } from "./components/Toast";
 
 function App() {
-  const { isConnected, address, balance, connect, getAddress, getBalance } = useWalletStore();
+  const { isConnected, address, balance, connect, getAddress, getBalance, sendGnot } =
+    useWalletStore();
+  const [recipient, setRecipient] = useState("");
+  const [amount, setAmount] = useState("");
 
   const checkConnection = async () => {
     if (!window.adena) {
@@ -31,6 +35,14 @@ function App() {
   useEffect(() => {
     checkConnection();
   }, []);
+
+  const handleSend = () => {
+    if (!recipient || !amount) {
+      alert("Please enter Recipient`s address and Amount.");
+      return;
+    }
+    sendGnot(recipient, amount);
+  };
 
   return (
     <div className="min-h-screen bg-white p-8">
@@ -60,11 +72,24 @@ function App() {
         </Card>
 
         <Card title="Send GNOT">
-          <Input label="Recipient:" />
-          <Input label="Amount:" />
-          <Button disabled>Send</Button>
+          <Input
+            label="Recipient:"
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+            disabled={!isConnected}
+          />
+          <Input
+            label="Amount:"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            disabled={!isConnected}
+          />
+          <Button onClick={handleSend} disabled={!isConnected}>
+            Send
+          </Button>
         </Card>
       </div>
+      <Toast />
     </div>
   );
 }

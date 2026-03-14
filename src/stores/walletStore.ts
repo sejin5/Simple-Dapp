@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useToastStore } from "./toastStore";
 
 interface WalletState {
   isConnected: boolean;
@@ -7,7 +8,10 @@ interface WalletState {
   connect: () => Promise<void>;
   getAddress: () => Promise<void>;
   getBalance: () => Promise<void>;
+  sendGnot: (toAddress: string, amount: string) => Promise<void>;
 }
+
+const { showToast } = useToastStore.getState();
 
 export const useWalletStore = create<WalletState>((set, get) => ({
   isConnected: false,
@@ -22,7 +26,6 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
     const res = await window.adena.AddEstablish("My DApp");
 
-    console.log(res, "res in store");
     if (res.status === "success") {
       set({ isConnected: true });
     } else if (res.type === "ALREADY_CONNECTED") {
@@ -56,6 +59,43 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       set({ balance: `${ugnot} ugnot` });
     } else {
       alert(`Getting Balace Fail: ${res.message}`);
+    }
+  },
+
+  sendGnot: async (toAddress: string, amount: string) => {
+    if (!window.adena || !get().isConnected) return;
+
+    const accountRes = await window.adena.GetAccount();
+
+    if (accountRes.status !== "success") {
+      alert("Getting Address Failed");
+      return;
+    }
+
+    const fromAddress = accountRes.data.address;
+
+    const ugnot = amount.replace("ugnot", "");
+
+    const res = await window.adena.DoContract({
+      messages: [
+        {
+          type: "/bank.MsgSend",
+          value: {
+            from_address: fromAddress,
+            to_address: toAddress,
+            amount: `${ugnot}ugnot`,
+          },
+        },
+      ],
+      memo: "",
+    });
+
+    if (res.status === "success") {
+      showToast("Transaction Success", "success", res.data.hash);
+    } else if (res.type === "TRANSACTION_REJECTED") {
+      alert(res.message);
+    } else {
+      showToast("Transaction Failed", "error", res.data.hash);
     }
   },
 }));

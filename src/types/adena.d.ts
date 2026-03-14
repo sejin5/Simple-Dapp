@@ -16,8 +16,6 @@ interface AdenaSendMessage {
 
 interface AdenaContractRequest {
   messages: AdenaSendMessage[];
-  gasFee: number;
-  gasWanted: number;
   memo?: string;
 }
 
