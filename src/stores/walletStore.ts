@@ -5,6 +5,9 @@ interface WalletState {
   isConnected: boolean;
   address: string;
   balance: string;
+  isLoadingAddress: boolean;
+  isLoadingBalance: boolean;
+  isLoadingSend: boolean;
   connect: () => Promise<void>;
   getAddress: () => Promise<void>;
   getBalance: () => Promise<void>;
@@ -13,10 +16,31 @@ interface WalletState {
 
 const { showToast } = useToastStore.getState();
 
+const handleWalletLocked = async (message: string) => {
+  alert(`${message} Try again`);
+  await window.adena?.AddEstablish("Adena");
+};
+
+const fetchAddress = async (): Promise<string | null> => {
+  const res = await window.adena!.GetAccount();
+
+  if (res.status === "success") return res.data.address;
+
+  if (res.type === "WALLET_LOCKED") {
+    await handleWalletLocked(res.message ?? "");
+  } else {
+    alert(`Getting Account Fail: ${res.message}`);
+  }
+  return null;
+};
+
 export const useWalletStore = create<WalletState>((set, get) => ({
   isConnected: false,
   address: "",
   balance: "",
+  isLoadingAddress: false,
+  isLoadingBalance: false,
+  isLoadingSend: false,
 
   connect: async () => {
     if (!window.adena) {
@@ -38,73 +62,79 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
   getAddress: async () => {
     if (!window.adena || !get().isConnected) return;
+    set({ isLoadingAddress: true });
 
-    const res = await window.adena.GetAccount();
-
-    if (res.status === "success") {
-      set({ address: res.data.address });
-    } else if (res.type === "WALLET_LOCKED") {
-      alert(`${res.message} Try again`);
-      await window.adena.AddEstablish("Adena");
-    } else {
-      alert(`Getting Address Fail: ${res.message}`);
+    try {
+      const address = await fetchAddress();
+      if (address) set({ address });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      alert(`Getting Address Fail: ${message}`);
+    } finally {
+      set({ isLoadingAddress: false });
     }
   },
 
   getBalance: async () => {
     if (!window.adena || !get().isConnected) return;
+    set({ isLoadingBalance: true });
 
-    const res = await window.adena.GetAccount();
+    try {
+      const res = await window.adena.GetAccount();
 
-    if (res.status === "success") {
-      const coins = res.data.coins as string;
-      const ugnot = parseInt(coins.replace("ugnot", "")) || 0;
-      set({ balance: `${ugnot} ugnot` });
-    } else if (res.type === "WALLET_LOCKED") {
-      alert(`${res.message} Try again`);
-      await window.adena.AddEstablish("Adena");
-    } else {
-      alert(`Getting Balace Fail: ${res.message}`);
+      if (res.status === "success") {
+        const coins = res.data.coins as string;
+        const ugnot = parseInt(coins.replace("ugnot", "")) || 0;
+        set({ balance: `${ugnot} ugnot` });
+      } else if (res.type === "WALLET_LOCKED") {
+        await handleWalletLocked(res.message ?? "");
+      } else {
+        alert(`Getting Balace Fail: ${res.message}`);
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      alert(`Getting Address Fail: ${message}`);
+    } finally {
+      set({ isLoadingBalance: false });
     }
   },
 
   sendGnot: async (toAddress: string, amount: string) => {
     if (!window.adena || !get().isConnected) return;
+    set({ isLoadingSend: true });
 
-    const accountRes = await window.adena.GetAccount();
+    try {
+      const address = get().address || (await fetchAddress());
+      if (!address) return;
 
-    if (accountRes.type === "WALLET_LOCKED") {
-      alert(`${accountRes.message} Try again`);
-      await window.adena.AddEstablish("Adena");
-    } else if (accountRes.status !== "success") {
-      alert("Getting Address Failed");
-      return;
-    }
+      const ugnot = amount.replace("ugnot", "");
 
-    const fromAddress = accountRes.data.address;
-
-    const ugnot = amount.replace("ugnot", "");
-
-    const res = await window.adena.DoContract({
-      messages: [
-        {
-          type: "/bank.MsgSend",
-          value: {
-            from_address: fromAddress,
-            to_address: toAddress,
-            amount: `${ugnot}ugnot`,
+      const res = await window.adena.DoContract({
+        messages: [
+          {
+            type: "/bank.MsgSend",
+            value: {
+              from_address: address,
+              to_address: toAddress,
+              amount: `${ugnot}ugnot`,
+            },
           },
-        },
-      ],
-      memo: "",
-    });
+        ],
+        memo: "",
+      });
 
-    if (res.status === "success") {
-      showToast("Transaction Success", "success", res.data.hash);
-    } else if (res.type === "TRANSACTION_REJECTED") {
-      alert(res.message);
-    } else {
-      showToast("Transaction Failed", "error", res.data.hash);
+      if (res.status === "success") {
+        showToast("Transaction Success", "success", res.data.hash);
+      } else if (res.type === "TRANSACTION_REJECTED") {
+        alert(res.message);
+      } else {
+        showToast("Transaction Failed", "error", res.data.hash);
+      }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      alert(`Getting Address Fail: ${message}`);
+    } finally {
+      set({ isLoadingSend: false });
     }
   },
 }));

@@ -6,8 +6,18 @@ import { useState } from "react";
 import { Toast } from "./components/Toast";
 
 function App() {
-  const { isConnected, address, balance, connect, getAddress, getBalance, sendGnot } =
-    useWalletStore();
+  const {
+    isConnected,
+    address,
+    balance,
+    isLoadingAddress,
+    isLoadingBalance,
+    isLoadingSend,
+    connect,
+    getAddress,
+    getBalance,
+    sendGnot,
+  } = useWalletStore();
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
 
@@ -39,14 +49,14 @@ function App() {
         </Card>
 
         <Card title="Get Gno.land Address">
-          <Button onClick={getAddress} disabled={!isConnected}>
+          <Button onClick={getAddress} disabled={!isConnected || isLoadingAddress}>
             Get Address
           </Button>
           <p className="text-[16px]">Address: {address}</p>
         </Card>
 
         <Card title="Get Balance">
-          <Button onClick={getBalance} disabled={!isConnected}>
+          <Button onClick={getBalance} disabled={!isConnected || isLoadingBalance}>
             Get Balance
           </Button>
           <p className="text-[16px]">Balance: {balance}</p>
@@ -65,7 +75,7 @@ function App() {
             onChange={(e) => setAmount(e.target.value)}
             disabled={!isConnected}
           />
-          <Button onClick={handleSend} disabled={!isConnected}>
+          <Button onClick={handleSend} disabled={!isConnected || isLoadingSend}>
             Send
           </Button>
         </Card>
