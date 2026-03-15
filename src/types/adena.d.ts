@@ -30,7 +30,7 @@ interface AdenaTransactionResponse extends AdenaResponse {
 }
 
 interface AdenaSendMessage {
-  type: "/bank.MsgSend";
+  type: string;
   value: {
     from_address: string;
     to_address: string;
