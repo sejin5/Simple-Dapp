@@ -5,6 +5,7 @@ interface Toast {
   message: string;
   type: "success" | "error";
   txhash?: string;
+  isLeaving?: boolean;
 }
 
 interface ToastState {
@@ -22,6 +23,12 @@ export const useToastStore = create<ToastState>((set) => ({
     set((state) => ({
       toasts: [...state.toasts, { id, message, txhash, type }],
     }));
+
+    setTimeout(() => {
+      set((state) => ({
+        toasts: state.toasts.map((t) => (t.id === id ? { ...t, isLeaving: true } : t)),
+      }));
+    }, 2700);
 
     setTimeout(() => {
       set((state) => ({
