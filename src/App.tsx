@@ -2,7 +2,7 @@ import { Card } from "./components/Card";
 import { Button } from "./components/Button";
 import { Input } from "./components/Input";
 import { useWalletStore } from "./stores/walletStore";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Toast } from "./components/Toast";
 
 function App() {
@@ -11,30 +11,11 @@ function App() {
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
 
-  const checkConnection = async () => {
+  window.onload = async () => {
     if (!window.adena) {
-      setTimeout(checkConnection, 500);
-      return;
-    }
-
-    const res = await window.adena.GetAccount();
-
-    if (res.status === "success") {
-      useWalletStore.setState({
-        isConnected: true,
-      });
-    } else if (res.type === "ALREADY_CONNECTED") {
-      useWalletStore.setState({
-        isConnected: true,
-      });
-    } else if (res.type === "WALLET_LOCKED") {
-      alert(res.message + " Plaese unlock Adena.");
+      window.open("https://adena.app/", "_blank");
     }
   };
-
-  useEffect(() => {
-    checkConnection();
-  }, []);
 
   const handleSend = () => {
     if (!recipient || !amount) {

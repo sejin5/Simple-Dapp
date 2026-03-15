@@ -20,11 +20,11 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
   connect: async () => {
     if (!window.adena) {
-      alert("Please Install Adena");
+      window.open("https://adena.app/", "_blank");
       return;
     }
 
-    const res = await window.adena.AddEstablish("My DApp");
+    const res = await window.adena.AddEstablish("Adena");
 
     if (res.status === "success") {
       set({ isConnected: true });
@@ -43,6 +43,9 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
     if (res.status === "success") {
       set({ address: res.data.address });
+    } else if (res.type === "WALLET_LOCKED") {
+      alert(`${res.message} Try again`);
+      await window.adena.AddEstablish("Adena");
     } else {
       alert(`Getting Address Fail: ${res.message}`);
     }
@@ -57,6 +60,9 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       const coins = res.data.coins as string;
       const ugnot = parseInt(coins.replace("ugnot", "")) || 0;
       set({ balance: `${ugnot} ugnot` });
+    } else if (res.type === "WALLET_LOCKED") {
+      alert(`${res.message} Try again`);
+      await window.adena.AddEstablish("Adena");
     } else {
       alert(`Getting Balace Fail: ${res.message}`);
     }
@@ -67,7 +73,10 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
     const accountRes = await window.adena.GetAccount();
 
-    if (accountRes.status !== "success") {
+    if (accountRes.type === "WALLET_LOCKED") {
+      alert(`${accountRes.message} Try again`);
+      await window.adena.AddEstablish("Adena");
+    } else if (accountRes.status !== "success") {
       alert("Getting Address Failed");
       return;
     }
