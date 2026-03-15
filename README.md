@@ -52,3 +52,5 @@ simple-dapp/
 #### 4. 기타 공통 사항
  - 조회, 전송 버튼 클릭 시 response 대기 동안 button disabled 적용
  - Wallet Locked 상태에서 버튼 클릭 시, Toast 알림과 동시에 팝업창으로 Lock 해제 유도.
+
+<img width="975" height="541" alt="Image" src="https://github.com/user-attachments/assets/1cf4460f-eb29-4d10-bc73-c019ce86f305" />
