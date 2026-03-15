@@ -11,7 +11,7 @@ interface WalletState {
   connect: () => Promise<void>;
   getAddress: () => Promise<void>;
   getBalance: () => Promise<void>;
-  sendGnot: (toAddress: string, amount: string) => Promise<void>;
+  sendGnot: (toAddress: string, amount: string, unit: string) => Promise<void>;
 }
 
 const { showToast } = useToastStore.getState();
@@ -84,8 +84,8 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
       if (res.status === "success") {
         const coins = res.data.coins as string;
-        const ugnot = parseInt(coins.replace("ugnot", "")) || 0;
-        set({ balance: `${ugnot} ugnot` });
+        const ugnot = coins.replace("ugnot", " ugnot") || "0 ugnot";
+        set({ balance: ugnot });
       } else if (res.type === "WALLET_LOCKED") {
         await handleWalletLocked(res.message ?? "");
       } else {
@@ -99,7 +99,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     }
   },
 
-  sendGnot: async (toAddress: string, amount: string) => {
+  sendGnot: async (toAddress: string, amount: string, unit: string) => {
     if (!window.adena || !get().isConnected) return;
     set({ isLoadingSend: true });
 
@@ -107,7 +107,10 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       const address = get().address || (await fetchAddress());
       if (!address) return;
 
-      const ugnot = amount.replace("ugnot", "");
+      if (unit === "gnot") {
+        amount = String(parseInt(amount) * 1000000);
+      }
+      const ugnot = amount + "ugnot";
 
       const res = await window.adena.DoContract({
         messages: [
@@ -116,7 +119,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
             value: {
               from_address: address,
               to_address: toAddress,
-              amount: `${ugnot}ugnot`,
+              amount: ugnot,
             },
           },
         ],

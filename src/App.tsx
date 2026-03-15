@@ -1,6 +1,6 @@
 import { Card } from "./components/Card";
 import { Button } from "./components/Button";
-import { Input } from "./components/Input";
+import { TextInput, AmountInput } from "./components/input";
 import { useWalletStore } from "./stores/walletStore";
 import { useState } from "react";
 import { Toast } from "./components/Toast";
@@ -20,6 +20,7 @@ function App() {
   } = useWalletStore();
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  const [unit, setUnit] = useState<"ugnot" | "gnot">("ugnot");
 
   window.onload = async () => {
     if (!window.adena) {
@@ -28,11 +29,11 @@ function App() {
   };
 
   const handleSend = () => {
-    if (!recipient || !amount) {
-      alert("Please enter Recipient`s address and Amount.");
+    if (!recipient || !amount || amount === "0") {
+      alert("Please enter Recipient's address and Amount.");
       return;
     }
-    sendGnot(recipient, amount);
+    sendGnot(recipient, amount, unit);
   };
 
   return (
@@ -63,17 +64,21 @@ function App() {
         </Card>
 
         <Card title="Send GNOT">
-          <Input
+          <TextInput
             label="Recipient:"
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
             disabled={!isConnected}
           />
-          <Input
+          <AmountInput
             label="Amount:"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             disabled={!isConnected}
+            type="number"
+            unit={unit}
+            onUnitChange={setUnit}
+            min={0}
           />
           <Button onClick={handleSend} disabled={!isConnected || isLoadingSend}>
             Send
