@@ -1,3 +1,4 @@
+import { cn } from "../utils";
 import { useToastStore } from "../stores/toastStore";
 
 export const Toast = () => {
@@ -9,14 +10,18 @@ export const Toast = () => {
         <div
           key={toast.id}
           onClick={() => removeToast(toast.id)}
-          className="px-4 py-3 rounded-lg bg-white cursor-pointer text-[16px] shadow-lg transition-all duration-300 border border-gray-200"
+          className={cn(
+            "px-4 py-3 rounded-lg bg-white cursor-pointer text-[16px]",
+            "shadow-lg transition-all duration-300 border border-gray-200",
+            toast.isLeaving ? "animate-slide-out" : "animate-slide-in"
+          )}
         >
           <p
             className={`font-bold ${toast.type === "success" ? "text-green-600" : "text-red-500"}`}
           >
             {toast.message}
           </p>
-          <p>txHash: {toast.txhash}</p>
+          {toast.variant === "transaction" && <p>txHash: {toast.txhash}</p>}
         </div>
       ))}
     </div>

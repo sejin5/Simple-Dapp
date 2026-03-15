@@ -1,47 +1,50 @@
 import { Card } from "./components/Card";
 import { Button } from "./components/Button";
-import { Input } from "./components/Input";
+import { TextInput, AmountInput } from "./components/input";
 import { useWalletStore } from "./stores/walletStore";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Toast } from "./components/Toast";
+import { useToastStore } from "./stores/toastStore";
 
 function App() {
-  const { isConnected, address, balance, connect, getAddress, getBalance, sendGnot } =
-    useWalletStore();
+  const {
+    isConnected,
+    address,
+    balance,
+    isLoadingAddress,
+    isLoadingBalance,
+    isLoadingSend,
+    connect,
+    getAddress,
+    getBalance,
+    sendGnot,
+  } = useWalletStore();
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  const [unit, setUnit] = useState<"ugnot" | "gnot">("ugnot");
 
-  const checkConnection = async () => {
-    if (!window.adena) {
-      setTimeout(checkConnection, 500);
+  const { showToast } = useToastStore();
+
+  const handleSend = async () => {
+    if (!recipient || !amount || amount === "0") {
+      showToast("Please enter Recipient's address and Amount.", "error");
       return;
     }
-
-    const res = await window.adena.GetAccount();
-
-    if (res.status === "success") {
-      useWalletStore.setState({
-        isConnected: true,
-      });
-    } else if (res.type === "ALREADY_CONNECTED") {
-      useWalletStore.setState({
-        isConnected: true,
-      });
-    } else if (res.type === "WALLET_LOCKED") {
-      alert(res.message + " Plaese unlock Adena.");
-    }
+    const result = await sendGnot(recipient, amount, unit);
+    if (result) handleClear();
   };
 
-  useEffect(() => {
-    checkConnection();
-  }, []);
+  const handleClear = () => {
+    setRecipient("");
+    setAmount("");
+    setUnit("ugnot");
+  };
 
-  const handleSend = () => {
-    if (!recipient || !amount) {
-      alert("Please enter Recipient`s address and Amount.");
-      return;
+  window.onload = async () => {
+    if (!window.adena) {
+      window.open("https://adena.app/", "_blank");
+      handleClear();
     }
-    sendGnot(recipient, amount);
   };
 
   return (
@@ -58,33 +61,37 @@ function App() {
         </Card>
 
         <Card title="Get Gno.land Address">
-          <Button onClick={getAddress} disabled={!isConnected}>
+          <Button onClick={getAddress} disabled={!isConnected || isLoadingAddress}>
             Get Address
           </Button>
           <p className="text-[16px]">Address: {address}</p>
         </Card>
 
         <Card title="Get Balance">
-          <Button onClick={getBalance} disabled={!isConnected}>
+          <Button onClick={getBalance} disabled={!isConnected || isLoadingBalance}>
             Get Balance
           </Button>
           <p className="text-[16px]">Balance: {balance}</p>
         </Card>
 
         <Card title="Send GNOT">
-          <Input
+          <TextInput
             label="Recipient:"
             value={recipient}
             onChange={(e) => setRecipient(e.target.value)}
             disabled={!isConnected}
           />
-          <Input
+          <AmountInput
             label="Amount:"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             disabled={!isConnected}
+            type="number"
+            unit={unit}
+            onUnitChange={setUnit}
+            min={1}
           />
-          <Button onClick={handleSend} disabled={!isConnected}>
+          <Button onClick={handleSend} disabled={!isConnected || isLoadingSend}>
             Send
           </Button>
         </Card>
