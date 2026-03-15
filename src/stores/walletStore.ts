@@ -11,13 +11,13 @@ interface WalletState {
   connect: () => Promise<void>;
   getAddress: () => Promise<void>;
   getBalance: () => Promise<void>;
-  sendGnot: (toAddress: string, amount: string, unit: string) => Promise<void>;
+  sendGnot: (toAddress: string, amount: string, unit: string) => Promise<boolean>;
 }
 
 const { showToast } = useToastStore.getState();
 
 const handleWalletLocked = async (message: string) => {
-  alert(`${message} Try again`);
+  showToast(`${message} Try again`, "error");
   await window.adena?.AddEstablish("Adena");
 };
 
@@ -56,7 +56,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       set({ isConnected: true });
       return;
     } else {
-      alert(`Connect Fail: ${res.message}`);
+      showToast(`Connect Fail: ${res.message}`, "error");
     }
   },
 
@@ -69,7 +69,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       if (address) set({ address });
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Unknown error";
-      alert(`Getting Address Fail: ${message}`);
+      showToast(`Getting Address Fail: ${message}`, "error");
     } finally {
       set({ isLoadingAddress: false });
     }
@@ -89,23 +89,23 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       } else if (res.type === "WALLET_LOCKED") {
         await handleWalletLocked(res.message ?? "");
       } else {
-        alert(`Getting Balace Fail: ${res.message}`);
+        showToast(`Getting Balace Fail: ${res.message}`, "error");
       }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Unknown error";
-      alert(`Getting Address Fail: ${message}`);
+      showToast(`Getting Address Fail: ${message}`, "error");
     } finally {
       set({ isLoadingBalance: false });
     }
   },
 
   sendGnot: async (toAddress: string, amount: string, unit: string) => {
-    if (!window.adena || !get().isConnected) return;
+    if (!window.adena || !get().isConnected) return false;
     set({ isLoadingSend: true });
 
     try {
       const address = get().address || (await fetchAddress());
-      if (!address) return;
+      if (!address) return false;
 
       if (unit === "gnot") {
         amount = String(parseInt(amount) * 1000000);
@@ -127,15 +127,19 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       });
 
       if (res.status === "success") {
-        showToast("Transaction Success", "success", res.data.hash);
+        showToast("Transaction Success", "success", res.data.hash, "transaction");
+        return true;
       } else if (res.type === "TRANSACTION_REJECTED") {
-        alert(res.message);
+        showToast(res.message ?? "Transaction Rejected", "error");
+        return false;
       } else {
-        showToast("Transaction Failed", "error", res.data.hash);
+        showToast("Transaction Failed", "error", res.data.hash, "transaction");
+        return false;
       }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Unknown error";
-      alert(`Getting Address Fail: ${message}`);
+      showToast(`Getting Address Fail: ${message}`, "error");
+      return false;
     } finally {
       set({ isLoadingSend: false });
     }

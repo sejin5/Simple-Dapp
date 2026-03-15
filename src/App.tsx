@@ -4,6 +4,7 @@ import { TextInput, AmountInput } from "./components/input";
 import { useWalletStore } from "./stores/walletStore";
 import { useState } from "react";
 import { Toast } from "./components/Toast";
+import { useToastStore } from "./stores/toastStore";
 
 function App() {
   const {
@@ -22,18 +23,28 @@ function App() {
   const [amount, setAmount] = useState("");
   const [unit, setUnit] = useState<"ugnot" | "gnot">("ugnot");
 
+  const { showToast } = useToastStore();
+
+  const handleSend = async () => {
+    if (!recipient || !amount || amount === "0") {
+      showToast("Please enter Recipient's address and Amount.", "error");
+      return;
+    }
+    const result = await sendGnot(recipient, amount, unit);
+    if (result) handleClear();
+  };
+
+  const handleClear = () => {
+    setRecipient("");
+    setAmount("");
+    setUnit("ugnot");
+  };
+
   window.onload = async () => {
     if (!window.adena) {
       window.open("https://adena.app/", "_blank");
+      handleClear();
     }
-  };
-
-  const handleSend = () => {
-    if (!recipient || !amount || amount === "0") {
-      alert("Please enter Recipient's address and Amount.");
-      return;
-    }
-    sendGnot(recipient, amount, unit);
   };
 
   return (
@@ -78,7 +89,7 @@ function App() {
             type="number"
             unit={unit}
             onUnitChange={setUnit}
-            min={0}
+            min={1}
           />
           <Button onClick={handleSend} disabled={!isConnected || isLoadingSend}>
             Send

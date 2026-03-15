@@ -21,7 +21,7 @@ export const Toast = () => {
           >
             {toast.message}
           </p>
-          <p>txHash: {toast.txhash}</p>
+          {toast.variant === "transaction" && <p>txHash: {toast.txhash}</p>}
         </div>
       ))}
     </div>
